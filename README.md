@@ -1,4 +1,4 @@
-# 🎨 π-Art & The Mona Lisa Theorem
+# π-Art & The Mona Lisa Theorem
 ### *An Interactive Infinity Visualizer, Audio Synthesizer & Mathematical Explorer*
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
