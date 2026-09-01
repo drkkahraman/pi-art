@@ -1,0 +1,19 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# SQLite Database (generated locally at runtime)
+pi_storage.db
+*.db
+*.sqlite3
+
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# Editor & IDE configs
+.vscode/
+.idea/
+*.swp
+*.swo

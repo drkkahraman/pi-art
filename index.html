@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pi Art & The Mona Lisa Theorem: Sonsuzluk Görselleştirici</title>
+  <meta name="description" content="Pi sayısını canlı hesaplayan ve sonsuz basamakları renkli sanat eserlerine ve Mona Lisa benzerlik testine dönüştüren interaktif canvas deneyimi.">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>π</text></svg>">
+</head>
+<body>
+  <!-- Ambient Atmosphere Lighting -->
+  <div class="ambient-glow top-left"></div>
+  <div class="ambient-glow bottom-right"></div>
+
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand-section">
+        <div class="brand-icon">π</div>
+        <div>
+          <h1 class="brand-title">Pi Art <span class="gradient-text">&amp; Mona Lisa Teoremi</span></h1>
+          <div class="brand-subtitle">Sonsuz Basamaklar &amp; Olasılık Sanatı</div>
+        </div>
+      </div>
+
+      <!-- Mode Selector Navigation -->
+      <nav class="mode-nav" id="modeNav">
+        <button class="mode-btn active" data-mode="matrix" id="btnModeMatrix">
+          <span>🌀</span> Piksel Matrisi
+        </button>
+        <button class="mode-btn" data-mode="raw-digits" id="btnModeRawDigits">
+          <span>🔢</span> Sade Sayılar
+        </button>
+        <button class="mode-btn" data-mode="plain-text" id="btnModePlainText">
+          <span>📝</span> Sade Yazı
+        </button>
+        <button class="mode-btn" data-mode="book" id="btnModeBook">
+          <span>📖</span> Pi Kitabı (Babil)
+        </button>
+        <button class="mode-btn" data-mode="monalisa" id="btnModeMonalisa">
+          <span>🖼️</span> Mona Lisa Teoremi
+        </button>
+        <button class="mode-btn" data-mode="spiral" id="btnModeSpiral">
+          <span>🌌</span> Pi Spirali
+        </button>
+        <button class="mode-btn" data-mode="walk" id="btnModeWalk">
+          <span>⚡</span> Neon Yürüyüş
+        </button>
+        <button class="mode-btn" data-mode="chord" id="btnModeChord">
+          <span>🕸️</span> Tel Sanatı
+        </button>
+      </nav>
+
+      <!-- Quick Action Controls -->
+      <div class="header-actions">
+        <div class="hud-card" id="sqliteBadge" style="padding: 6px 14px; min-width: auto; display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--accent-green);" title="IndexedDB & SQLite Kalıcı Hafıza Sistemi">
+          <span style="font-size: 14px;">💾</span>
+          <div>
+            <div style="font-weight: 700; color: #fff;">Kalıcı Hafıza</div>
+            <div id="sqliteStatusText" style="color: var(--accent-green); font-size: 10px;">Senkronize (0 basamak)</div>
+          </div>
+        </div>
+        <button class="btn" id="btnAudioToggle" title="Ambient Pi Sentezleyici">
+          <span id="audioIcon">🔇</span> Ses
+        </button>
+        <button class="btn btn-primary" id="btnExportImage" title="Sanat Eserini PNG Olarak İndir">
+          <span>💾</span> Dışa Aktar
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="main-workspace">
+      <!-- Canvas Viewport -->
+      <section class="canvas-viewport" id="viewportContainer">
+        <canvas id="piCanvas"></canvas>
+
+        <!-- Plain Raw Digits Viewport (Sade Sayı Modu) -->
+        <div class="plain-view-container" id="piRawDigitsContainer" style="display: none;">
+          <div class="plain-view-card">
+            <div class="plain-view-header">
+              <div class="plain-view-title-group">
+                <div class="plain-view-badge">π SAYISAL AKIŞ</div>
+                <h2 class="plain-view-title">Sade Pi Basamakları</h2>
+                <span class="plain-view-counter" id="rawDigitsCounter">0 basamak</span>
+              </div>
+              <div class="plain-view-actions">
+                <div class="plain-select-group">
+                  <label for="selectDigitsGrouping">Gruplama:</label>
+                  <select id="selectDigitsGrouping" class="plain-mini-select">
+                    <option value="blocks-10" selected>10'lu Bloklar</option>
+                    <option value="lines-50">50'li Satırlar [No]</option>
+                    <option value="continuous">Kesintisiz Düz Metin</option>
+                  </select>
+                </div>
+                <div class="plain-font-controls">
+                  <button class="btn-plain-tool" id="btnFontDecDigits" title="Yazıyı Küçült">A-</button>
+                  <button class="btn-plain-tool" id="btnFontIncDigits" title="Yazıyı Büyüt">A+</button>
+                </div>
+                <button class="btn btn-sm" id="btnAutoScrollDigits" title="Yeni basamaklara otomatik kaydır">
+                  <span id="autoScrollDigitsIcon">⚡</span> <span id="autoScrollDigitsText">Oto-Kaydır: Açık</span>
+                </button>
+                <button class="btn btn-sm btn-primary" id="btnCopyDigits" title="Tüm Pi basamaklarını panoya kopyala">
+                  <span>📋</span> Sayıyı Kopyala
+                </button>
+              </div>
+            </div>
+            <div class="plain-view-body monospaced" id="rawDigitsBody">
+              <span class="pi-prefix">3.</span><span class="pi-digits-content" id="rawDigitsContent">Henüz basamak hesaplanmadı... Başlat butonuna basın.</span>
+            </div>
+            <div class="plain-view-footer">
+              <div class="plain-footer-info">
+                <span>💡 Jeremy Gibbons Unbounded Spigot algoritmasıyla canlı BigInt hesaplanır.</span>
+              </div>
+              <div class="plain-footer-stats" id="rawDigitsFooterStats">
+                Son basamak: <strong id="rawLastDigit">-</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Plain Text / Decoded Viewport (Sade Yazı Modu) -->
+        <div class="plain-view-container" id="piPlainTextContainer" style="display: none;">
+          <div class="plain-view-card">
+            <div class="plain-view-header">
+              <div class="plain-view-title-group">
+                <div class="plain-view-badge gold">TÜRKÇE / METİN AKIŞI</div>
+                <h2 class="plain-view-title">Sade Metin &amp; Harf Çözümlemesi</h2>
+                <span class="plain-view-counter" id="plainTextCounter">0 harf • 0 kelime</span>
+              </div>
+              <div class="plain-view-actions">
+                <div class="plain-select-group">
+                  <label for="selectTextDecodeMode">Çözümleme:</label>
+                  <select id="selectTextDecodeMode" class="plain-mini-select">
+                    <option value="turkish-dual" selected>Türkçe Alfabe (Mod 30 - 29 Harf + Boşluk)</option>
+                    <option value="turkish-freq">Frekans Harfleri (A, E, İ, N, R...)</option>
+                    <option value="ascii">ASCII Karakterler</option>
+                  </select>
+                </div>
+                <div class="plain-font-controls">
+                  <button class="btn-plain-tool" id="btnFontDecText" title="Yazıyı Küçült">A-</button>
+                  <button class="btn-plain-tool" id="btnFontIncText" title="Yazıyı Büyüt">A+</button>
+                </div>
+                <button class="btn btn-sm" id="btnAutoScrollText" title="Yeni metne otomatik kaydır">
+                  <span id="autoScrollTextIcon">⚡</span> <span id="autoScrollTextText">Oto-Kaydır: Açık</span>
+                </button>
+                <button class="btn btn-sm btn-primary" id="btnCopyPlainText" title="Tüm deşifre edilmiş metni kopyala">
+                  <span>📋</span> Metni Kopyala
+                </button>
+              </div>
+            </div>
+            <div class="plain-view-body natural-text" id="plainTextBody">
+              <div class="plain-text-content" id="plainTextContent">Pi sayısının sonsuz basamakları harflere ve kelimelere dönüştürülüyor...</div>
+            </div>
+            <div class="plain-view-footer">
+              <div class="plain-footer-info">
+                <span>📚 Sonsuz basamaklar Türkçe alfabeye dönüştürülerek kesintisiz metin oluşturulur.</span>
+              </div>
+              <div class="plain-footer-stats" id="plainTextFooterStats">
+                Kelime Havuzu: <strong id="plainWordCountStat">0</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Book Reader Viewport (Pi Kitabı Mode) -->
+        <div class="pi-book-container" id="piBookContainer" style="display: none;">
+          <div class="book-spine-effect"></div>
+          <div class="book-page" id="bookPage">
+            <div class="book-header">
+              <span class="book-title-tag">π BABİL KÜTÜPHANESİ • CİLT #1</span>
+              <span class="book-page-num" id="bookPageIndicator">Sayfa 1 / 1</span>
+            </div>
+
+            <div class="book-chapter-title">
+              <h2>BÖLÜM 1: SONSUZLUK METİNLERİ</h2>
+              <div class="book-divider"></div>
+            </div>
+
+            <div class="book-content" id="bookContent">
+              <p class="book-paragraph" id="bookTextBody">
+                <span class="drop-cap">P</span>i sayısının sonsuz basamakları Türkçe harflere deşifre ediliyor...
+              </p>
+            </div>
+
+            <div class="book-footer">
+              <div class="book-nav-controls">
+                <button class="btn btn-sm" id="btnBookPrevPage">◀ Önceki Sayfa</button>
+                <button class="btn btn-sm btn-primary" id="btnBookLivePage">⚡ Canlı En Son Sayfa</button>
+                <button class="btn btn-sm" id="btnBookNextPage">Sonraki Sayfa ▶</button>
+              </div>
+              <div class="book-stats">
+                <span id="bookWordCount">0 Kelime</span> • <span id="bookCharCount">0 Harf</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Floating HUD Stats -->
+        <div class="hud-layer">
+          <div class="hud-group">
+            <div class="hud-card">
+              <div class="hud-label">Hesaplanan Pi Basamağı</div>
+              <div class="hud-value cyan" id="hudTotalDigits">0</div>
+              <div class="hud-sub">
+                <span id="hudSpeedRate">0 basamak/sn</span>
+              </div>
+            </div>
+
+            <div class="hud-card" id="hudCoordsCard">
+              <div class="hud-label">Canlı Büyüyen Canvas (X, Y)</div>
+              <div class="hud-value gold" id="hudCoords">X: 0, Y: 0</div>
+              <div class="hud-sub">
+                Büyüme: <strong id="hudGridArea" style="color: #fff; margin-left: 4px;">0 piksel²</strong>
+              </div>
+            </div>
+
+            <div class="hud-card" id="hudMonaLisaCard" style="display: none;">
+              <div class="hud-label">Mona Lisa Benzerliği</div>
+              <div class="hud-value gold" id="hudSimilarity">0.00%</div>
+              <div class="hud-sub">
+                Taranan Kare: <strong id="hudFramesCount" style="color: #fff; margin-left: 4px;">1</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="hud-group" style="align-items: flex-end;">
+            <div class="hud-card" style="min-width: 140px; text-align: right;">
+              <div class="hud-label" style="justify-content: flex-end;">Yakınlaştırma (Zoom)</div>
+              <div class="hud-value" id="hudZoom">1.0x</div>
+              <div class="hud-sub" style="justify-content: flex-end;">Fare tekeri &amp; sürükle</div>
+            </div>
+            <button class="btn btn-primary" id="btnToggleAutoFollow" style="margin-top: 4px; pointer-events: auto;" title="Büyüyen ucu otomatik takip et">
+              <span id="autoFollowIcon">🎥</span> <span id="autoFollowText">Kamera Takibi: Açık</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Live Pi Stream Ribbon & Decoded Turkish Text -->
+        <div class="pi-stream-ribbon">
+          <div style="display: flex; flex-direction: column; width: 100%; gap: 4px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div class="stream-label">CANLI π :</div>
+              <div class="stream-digits" id="streamDigits">3.1415926535...</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 4px;">
+              <div class="stream-label" style="color: var(--accent-gold);">TÜRKÇE METİN :</div>
+              <div class="stream-digits" id="streamTurkishText" style="color: #ffd166; font-size: 13px;">A B Ç D E...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hover Pixel Inspector Tooltip -->
+        <div class="pixel-inspector-popup" id="pixelInspector">
+          <div><span class="pixel-color-chip" id="inspectColorChip"></span><strong id="inspectHex">#FFFFFF</strong></div>
+          <div style="color: var(--text-muted); margin-top: 4px;">Pi Basamağı: <span id="inspectDigit" style="color: var(--accent-cyan); font-weight: bold;">-</span></div>
+          <div style="color: #ffd166;" id="inspectSymbolRow">Harf / Sembol: <strong id="inspectSymbol" style="font-size: 14px;">-</strong></div>
+          <div style="color: var(--text-dim);">Konum: #<span id="inspectIndex">-</span> (X: <span id="inspectX">-</span>, Y: <span id="inspectY">-</span>)</div>
+        </div>
+      </section>
+
+      <!-- Sidebar Controls Panel -->
+      <aside class="sidebar-panel" id="sidebarPanel">
+        <!-- Playback Section -->
+        <div class="sidebar-section">
+          <div class="section-title">
+            <span>⚙️</span> Hesaplama &amp; Akış
+          </div>
+          
+          <div class="playback-grid">
+            <button class="btn btn-primary" id="btnPlayPause">
+              <span id="playPauseIcon">▶</span> <span id="playPauseText">Başlat</span>
+            </button>
+            <button class="btn btn-danger" id="btnReset">
+              <span>↺</span> Sıfırla
+            </button>
+          </div>
+
+          <div class="playback-grid">
+            <button class="btn" id="btnBurst10k" title="Anında 10.000 basamak hesapla">
+              <span>⚡</span> +10.000 Basamak
+            </button>
+            <button class="btn" id="btnResetView" title="Kamerayı Merkeze Al">
+              <span>🎯</span> Görünümü Sıfırla
+            </button>
+          </div>
+
+          <div class="control-field" style="margin-top: 14px;">
+            <div class="field-header">
+              <span>Akış Hızı</span>
+              <span class="field-value" id="valSpeed">500 dps</span>
+            </div>
+            <input type="range" id="sliderSpeed" min="1" max="10000" step="10" value="500">
+          </div>
+        </div>
+
+        <!-- Mona Lisa Theorem Explorer Section -->
+        <div class="sidebar-section" id="sectionMonaLisaOptions">
+          <div class="section-title">
+            <span>🎨</span> Mona Lisa Teoremi
+          </div>
+          
+          <div class="monalisa-theorem-box">
+            <div class="theorem-title">
+              <span>🔬</span> Sonsuz Maymun &amp; Pi Hipotezi
+            </div>
+            <div class="theorem-desc">
+              Pi sayısı normal (tüm dizilimleri içeren) bir sayıysa, sonsuz basamakları arasında Mona Lisa tablosunun piksel piksel aynısı mutlaka yer alır.
+            </div>
+            <div class="theorem-stat-row">
+              <span style="color: var(--text-muted);">Tablo Çözünürlüğü:</span>
+              <span class="theorem-stat-val">64 × 64 (4,096 px)</span>
+            </div>
+            <div class="theorem-stat-row">
+              <span style="color: var(--text-muted);">Tam Eşleşme Olasılığı:</span>
+              <span class="theorem-stat-val" style="color: var(--accent-gold);">10<sup>-4096</sup></span>
+            </div>
+          </div>
+
+          <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 8px;">
+            <button class="btn" id="btnToggleDiff">
+              <span id="diffIcon">🔍</span> Fark Isı Haritası (Diff)
+            </button>
+            <label class="btn" style="cursor: pointer;">
+              <span>📁</span> Özel Hedef Resim Yükle
+              <input type="file" id="targetImageInput" accept="image/*" style="display: none;">
+            </label>
+          </div>
+        </div>
+
+        <!-- Color & Aesthetics Section -->
+        <div class="sidebar-section">
+          <div class="section-title">
+            <span>🌈</span> Renk Paleti &amp; Eşleme
+          </div>
+
+          <div class="control-field">
+            <div class="field-header">
+              <span>Renk Paleti</span>
+            </div>
+            <select class="select-input" id="selectPalette">
+              <option value="cyberpunk" selected>Cyberpunk Neon</option>
+              <option value="monalisa">Mona Lisa Pigmentleri (Da Vinci)</option>
+              <option value="spectral">Spektral Gökkuşağı</option>
+              <option value="thermal">Termal Isı Haritası</option>
+              <option value="pastel">Pastel Dream</option>
+              <option value="monochrome">OLED Monokrom</option>
+            </select>
+            <div class="palette-preview-grid" id="palettePreview"></div>
+          </div>
+
+          <div class="control-field">
+            <div class="field-header">
+              <span>Renk Eşleme Metodu</span>
+            </div>
+            <select class="select-input" id="selectMapping">
+              <option value="single" selected>Tek Basamak (0-9 -> 10 Renk)</option>
+              <option value="dual">İkili Basamak (00-99 -> HSL Spektrum)</option>
+              <option value="rgb">Üçlü Basamak (3 Basamak = RGB)</option>
+              <option value="hex">Altılı Basamak (6 Basamak = HEX)</option>
+            </select>
+          </div>
+
+          <!-- Symbol / Turkish Alphabet Selector -->
+          <div class="control-field">
+            <div class="field-header">
+              <span>Harf &amp; Sembol Modu</span>
+              <span class="field-value" id="valSymbolMode" style="font-size: 11px;">Türkçe Alfabe</span>
+            </div>
+            <select class="select-input" id="selectSymbolMode">
+              <option value="none">Sadece Renkler (Kapalı)</option>
+              <option value="turkish-dual" selected>🇹🇷 Türkçe Alfabe (İkili Mod 30 - 29 Harf)</option>
+              <option value="turkish-letters">🇹🇷 Türkçe Frekans Harfleri (0-9 -> A,E,İ,N,R...)</option>
+              <option value="morse">📡 Mors Alfabesi (• ve —)</option>
+              <option value="binary">💻 İkili Sistem (0 ve 1)</option>
+              <option value="emoji">✨ Emoji Spektrumu (🪐🌌⭐🎨...)</option>
+              <option value="ascii">🔤 ASCII Yoğunluk Glifleri</option>
+            </select>
+          </div>
+
+          <div class="control-field" id="gridGrowthContainer">
+            <div class="field-header">
+              <span>Canvas Büyüme Şekli</span>
+            </div>
+            <select class="select-input" id="selectGrowthMode">
+              <option value="fixed-width" selected>Sonsuz Dikey Izgara (X: 0..N, Y: 0..∞)</option>
+              <option value="square">Büyüyen Simetrik Kare (√N × √N)</option>
+            </select>
+          </div>
+
+          <div class="control-field" id="gridColsContainer">
+            <div class="field-header">
+              <span>Izgara Genişliği (X Sütun Sayısı)</span>
+              <span class="field-value" id="valGridCols">80 sütun</span>
+            </div>
+            <input type="range" id="sliderGridCols" min="10" max="300" step="5" value="80">
+          </div>
+
+          <div class="control-field" id="gridSizeContainer">
+            <div class="field-header">
+              <span>Piksel Blok Boyutu</span>
+              <span class="field-value" id="valGridSize">14px</span>
+            </div>
+            <input type="range" id="sliderGridSize" min="4" max="40" step="1" value="14">
+          </div>
+        </div>
+
+        <!-- Turkish Word Search & Literature Section -->
+        <div class="sidebar-section">
+          <div class="section-title">
+            <span>📚</span> Pi'de Türkçe Kelime Arama
+          </div>
+          <div class="theorem-desc">
+            Sonsuz Pi basamakları Türkçe harflere çevrildiğinde her kelimeyi içerir (Babil Kütüphanesi).
+          </div>
+          <div style="display: flex; gap: 8px; margin-top: 8px;">
+            <input type="text" class="text-input" id="inputWordSearch" placeholder="Kelime ara (örn: SANAT, MONA, ATATÜRK)" maxlength="24">
+            <button class="btn btn-primary" id="btnWordSearch">Ara</button>
+          </div>
+          <div id="wordSearchResult" style="font-size: 11px; margin-top: 8px; color: var(--text-muted); font-family: var(--font-mono);"></div>
+        </div>
+
+        <!-- Digit Search & Substrings -->
+        <div class="sidebar-section">
+          <div class="section-title">
+            <span>🔎</span> Pi'de Sayı / Tarih Arama
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" class="text-input" id="inputSearch" placeholder="Sayı veya doğum günü (örn: 1998, 777)" maxlength="20">
+            <button class="btn btn-primary" id="btnSearch">Bul</button>
+          </div>
+          <div id="searchResult" style="font-size: 11px; margin-top: 8px; color: var(--text-muted); font-family: var(--font-mono);"></div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <!-- Floating Toast Notification -->
+  <div class="toast-notification" id="toastNotification">
+    <span class="toast-icon" id="toastIcon">✨</span>
+    <span class="toast-message" id="toastMessage">Panoya kopyalandı!</span>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/pi-engine.js"></script>
+  <script src="js/pi-storage.js"></script>
+  <script src="js/visualizers.js"></script>
+  <script src="js/audio-synth.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
