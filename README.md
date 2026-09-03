@@ -52,7 +52,7 @@ At its core lies the **Mona Lisa Theorem** (an artistic adaptation of the *Infin
 Clone the repository and run the Python backend:
 
 ```bash
-git clone https://github.com/<your-username>/pi-art.git
+git clone https://github.com/drkkahraman/pi-art.git
 cd pi-art
 python3 server.py
 ```
